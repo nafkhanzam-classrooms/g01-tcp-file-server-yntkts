@@ -5,7 +5,7 @@
 | Nama           | NRP        | Kelas     |
 | ---            | ---        | ----------|
 | Pradhipta Raja Mahendra               |  5025241055          |      D     |
-| Andie Azriel Alfrianto               |  5025241054          |     D      |
+| Andie Azril Alfrianto               |  5025241054          |     D      |
 
 ## Link Youtube (Unlisted)
 Link ditaruh di bawah ini
