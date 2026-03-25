@@ -4,8 +4,8 @@
 ## Anggota Kelompok
 | Nama           | NRP        | Kelas     |
 | ---            | ---        | ----------|
-|                |            |           |
-|                |            |           |
+| Pradhipta Raja Mahendra               |  5025241055          |      D     |
+| Andie Azriel Alfrianto               |  5025241054          |     D      |
 
 ## Link Youtube (Unlisted)
 Link ditaruh di bawah ini
@@ -14,5 +14,66 @@ Link ditaruh di bawah ini
 ```
 
 ## Penjelasan Program
+
+```server-sync.py```
+
+1. Inisialisasi & Konfigurasi Awal <br>
+   Server dikonfigurasi untuk mendengarkan di semua interface (0.0.0.0) pada port 5000. Saat pertama kali dijalankan, server membuat folder server_files jika belum ada — folder ini digunakan sebagai tempat penyimpanan file yang diunggah klien. Socket server dibuat dengan protokol TCP (SOCK_STREAM), lalu di-bind dan mulai mendengarkan koneksi masuk.
+Dua struktur data penting diinisialisasi di sini:
+
+    - sockets_list — daftar semua socket aktif (termasuk server socket itu sendiri)
+    - clients — dictionary yang memetakan setiap socket klien ke alamat IP-nya
+
+
+2. Fungsi broadcast() <br>
+Fungsi ini bertugas mengirim pesan ke semua klien kecuali pengirimnya sendiri. Ini adalah inti dari fitur chat — ketika satu klien mengirim pesan, semua klien lain akan menerimanya. Pengiriman dibungkus dalam blok try/except agar satu klien yang bermasalah tidak menghentikan broadcast ke klien lainnya.
+
+3. Fungsi handle_command() — Pemrosesan Perintah <br>
+Ini adalah fungsi utama yang memproses setiap data yang diterima dari klien.
+
+     - /list — mengembalikan daftar file yang ada di folder server
+     - /upload <filename> — menerima file dari klien secara binary dalam bentuk chunk 1024 byte, dengan penanda akhir <EOF>
+     - /download <filename> — mengirim file ke klien secara binary, diawali header FILE:<nama> dan diakhiri <EOF>
+
+4. Main Loop — Multiplexing dengan select() <br>
+Jantung dari server ini adalah loop tak terbatas yang menggunakan select.select() untuk memantau semua socket secara efisien tanpa blocking. Cara kerjanya:
+
+     - select() mengembalikan daftar socket yang siap dibaca (ada data masuk)
+     - Jika socket yang aktif adalah server_socket, berarti ada klien baru yang ingin terhubung — server menerimanya dan mendaftarkannya ke sockets_list dan clients
+     - Jika socket lainnya yang aktif, berarti klien yang sudah terhubung mengirim data — server membacanya dan meneruskan ke handle_command()
+     - Jika data kosong atau terjadi error (klien disconnect), socket tersebut dihapus dari kedua daftar secara bersih
+
+
+<br>
+<br>
+
+```server-poll.py```
+1. Konfigurasi Awal <br>
+
+     - HOST = '0.0.0.0' — server mendengarkan dari semua interface jaringan yang tersedia.
+     - PORT = 5000 — port yang digunakan untuk koneksi masuk.
+     - BUFFER_SIZE = 1024 — ukuran potongan data (chunk) yang dibaca setiap kali, sebesar 1024 byte.
+     - FOLDER = "server_files" — direktori tempat file yang diupload disimpan. Jika folder belum ada, os.makedirs() akan membuatnya secara otomatis.
+     - sel = selectors.DefaultSelector() — objek selector untuk memantau banyak socket secara bersamaan (non-blocking).
+     - clients = {} — dictionary untuk menyimpan pemetaan antara socket client dan alamat IP:port-nya.
+
+
+2. Fungsi broadcast(message, sender) <br>
+Mengirim pesan chat ke semua client yang terhubung, kecuali pengirimnya sendiri. Iterasi dilakukan pada semua socket di clients, dan pesan di-encode ke bytes sebelum dikirim. Jika pengiriman ke salah satu client gagal, error diabaikan dengan pass agar server tetap berjalan.
+
+3. Fungsi accept_connection(server_socket) <br>
+Dipanggil otomatis saat ada client baru yang mencoba terhubung. Server menerima koneksi dengan server_socket.accept(), lalu mengatur socket client menjadi non-blocking (setblocking(False)). Socket tersebut kemudian didaftarkan ke selector agar dipantau untuk event baca, dengan handle_client sebagai callback-nya. Alamat client disimpan ke dictionary clients.
+
+4. Fungsi handle_client(client_socket) — Inti Server***
+Fungsi ini menangani semua perintah yang dikirim client. Data diterima dengan recv(BUFFER_SIZE) lalu di-decode. Terdapat empat cabang logika:
+
+    - /list — Menampilkan daftar file yang ada di folder server_files. Jika kosong, kirim respons "Kosong".
+    - /upload <filename> — Menerima file dari client secara bertahap (chunk by chunk). Server terus membaca data hingga menemukan penanda <EOF> di akhir chunk, yang menandai akhir pengiriman file. File disimpan ke server_files/.
+    - /download <filename> — Mengirim file ke client. Server pertama mengirim header FILE:<filename>, lalu membaca file dalam potongan-potongan dan mengirimkannya. Setelah selesai, penanda <EOF> dikirim sebagai sinyal akhir data.
+    - Pesan biasa (chat) — Jika input tidak diawali perintah apapun, dianggap sebagai pesan chat. Pesan diformat menjadi [IP:PORT] pesan lalu di-broadcast ke semua client lain.
+
+
+5. Fungsi main() — Event Loop
+Membuat server socket TCP (AF_INET, SOCK_STREAM), melakukan bind ke HOST:PORT, dan mulai listen. Socket server juga diatur non-blocking dan didaftarkan ke selector. Program kemudian masuk ke infinite loop yang terus memanggil sel.select() — metode ini memblokir hingga ada socket yang siap dibaca, lalu menjalankan callback yang sesuai (accept_connection atau handle_client) untuk setiap event yang terjadi.
 
 ## Screenshot Hasil
