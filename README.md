@@ -15,7 +15,7 @@ Link ditaruh di bawah ini
 
 ## Penjelasan Program
 
-```server-sync.py```
+### ```server-sync.py```
 
 1. Inisialisasi & Konfigurasi Awal <br>
    Server dikonfigurasi untuk mendengarkan di semua interface (0.0.0.0) pada port 5000. Saat pertama kali dijalankan, server membuat folder server_files jika belum ada — folder ini digunakan sebagai tempat penyimpanan file yang diunggah klien. Socket server dibuat dengan protokol TCP (SOCK_STREAM), lalu di-bind dan mulai mendengarkan koneksi masuk.
@@ -47,7 +47,7 @@ Jantung dari server ini adalah loop tak terbatas yang menggunakan select.select(
 <br>
 <br>
 
-```server-poll.py```
+### ```server-poll.py```
 1. Konfigurasi Awal <br>
 
      - HOST = '0.0.0.0' — server mendengarkan dari semua interface jaringan yang tersedia.
@@ -75,8 +75,10 @@ Fungsi ini menangani semua perintah yang dikirim client. Data diterima dengan re
 
 5. Fungsi main() — Event Loop
 Membuat server socket TCP (AF_INET, SOCK_STREAM), melakukan bind ke HOST:PORT, dan mulai listen. Socket server juga diatur non-blocking dan didaftarkan ke selector. Program kemudian masuk ke infinite loop yang terus memanggil sel.select() — metode ini memblokir hingga ada socket yang siap dibaca, lalu menjalankan callback yang sesuai (accept_connection atau handle_client) untuk setiap event yang terjadi.
+<br>
 
-```server-select.py```
+### ```server-select.py```
+
 Inisialisasi & Konfigurasi Awal
 Server dikonfigurasi untuk mendengarkan di semua interface (0.0.0.0) pada port 5000. Saat dijalankan, server membuat folder server_files jika belum ada. Socket dibuat menggunakan TCP, lalu di-bind dan mulai listen. Dua struktur data utama:
 
@@ -96,8 +98,10 @@ Server menggunakan select.select() untuk memantau semua socket tanpa blocking:
 1. Jika server_socket aktif → ada klien baru, lalu ditambahkan ke daftar
 2. Jika socket klien aktif → data dibaca dan diproses
 3. Jika klien disconnect → socket dihapus dari daftar
+<br>
 
-```server-thread.py```
+### ```server-thread.py```
+
 Inisialisasi & Konfigurasi Awal
 Server berjalan di 0.0.0.0:5000, membuat folder server_files, dan menggunakan socket TCP. Tidak menggunakan select, tetapi list clients untuk menyimpan koneksi aktif.
 
@@ -115,7 +119,8 @@ Jika terjadi error atau disconnect, klien dihapus dari daftar.
 Main Loop — Multithreading
 Server menerima koneksi dengan accept(), lalu membuat thread baru untuk setiap klien menggunakan threading.Thread. Dengan ini, banyak klien bisa dilayani secara bersamaan.
 
-`client.py`
+### `client.py`
+
 Inisialisasi & Koneksi
 Client dibuat dengan socket TCP dan terhubung ke server menggunakan connect(). Menentukan base_dir untuk membaca file upload dan menyimpan file download.
 
