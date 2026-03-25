@@ -76,4 +76,64 @@ Fungsi ini menangani semua perintah yang dikirim client. Data diterima dengan re
 5. Fungsi main() — Event Loop
 Membuat server socket TCP (AF_INET, SOCK_STREAM), melakukan bind ke HOST:PORT, dan mulai listen. Socket server juga diatur non-blocking dan didaftarkan ke selector. Program kemudian masuk ke infinite loop yang terus memanggil sel.select() — metode ini memblokir hingga ada socket yang siap dibaca, lalu menjalankan callback yang sesuai (accept_connection atau handle_client) untuk setiap event yang terjadi.
 
+```server-select.py```
+Inisialisasi & Konfigurasi Awal
+Server dikonfigurasi untuk mendengarkan di semua interface (0.0.0.0) pada port 5000. Saat dijalankan, server membuat folder server_files jika belum ada. Socket dibuat menggunakan TCP, lalu di-bind dan mulai listen. Dua struktur data utama:
+
+`sockets_list` — daftar semua socket aktif
+`clients` — mapping socket klien ke alamatnya
+Fungsi `broadcast()`
+Mengirim pesan ke semua klien kecuali pengirim. Digunakan untuk fitur chat, dengan try/except agar error pada satu klien tidak mengganggu yang lain.
+
+Pemrosesan Perintah
+Server menangani beberapa perintah dari klien:
+/list — menampilkan daftar file
+/upload — menerima file per chunk hingga <EOF>
+/download — mengirim file diawali FILE: dan diakhiri <EOF>
+Main Loop — Multiplexing dengan select()
+
+Server menggunakan select.select() untuk memantau semua socket tanpa blocking:
+1. Jika server_socket aktif → ada klien baru, lalu ditambahkan ke daftar
+2. Jika socket klien aktif → data dibaca dan diproses
+3. Jika klien disconnect → socket dihapus dari daftar
+
+```server-thread.py```
+Inisialisasi & Konfigurasi Awal
+Server berjalan di 0.0.0.0:5000, membuat folder server_files, dan menggunakan socket TCP. Tidak menggunakan select, tetapi list clients untuk menyimpan koneksi aktif.
+
+Fungsi `broadcast()`
+Mengirim pesan ke semua klien lain. Error ditangani agar tidak mengganggu koneksi lain.
+
+Fungsi `handle_client()`
+Setiap klien ditangani dalam fungsi ini:
+/list — menampilkan file
+/upload — menerima file hingga <EOF>
+/download — mengirim file dengan format FILE:
+selain itu — broadcast sebagai chat
+Jika terjadi error atau disconnect, klien dihapus dari daftar.
+
+Main Loop — Multithreading
+Server menerima koneksi dengan accept(), lalu membuat thread baru untuk setiap klien menggunakan threading.Thread. Dengan ini, banyak klien bisa dilayani secara bersamaan.
+
+`client.py`
+Inisialisasi & Koneksi
+Client dibuat dengan socket TCP dan terhubung ke server menggunakan connect(). Menentukan base_dir untuk membaca file upload dan menyimpan file download.
+
+Thread receive()
+Client menjalankan thread untuk menerima data dari server. Data disimpan dalam buffer untuk menangani data yang terpotong. Jika menerima FILE:, client masuk mode download dan menyimpan file hingga <EOF>. Jika bukan, ditampilkan sebagai pesan biasa.
+
+Loop Input
+Client membaca input user dan mengirim ke server:
+/upload — kirim file per chunk + <EOF>
+/download — minta file
+/list — minta daftar file
+selain itu — kirim sebagai chat
+
 ## Screenshot Hasil
+<img width="529" height="85" alt="image" src="https://github.com/user-attachments/assets/ce60836c-e4ae-4c50-be16-5de7cda97e0b" />
+<br>
+<img width="578" height="310" alt="image" src="https://github.com/user-attachments/assets/8478754a-c4b9-4b01-8452-00c8d2eab8a3" />
+<br>
+<img width="554" height="75" alt="image" src="https://github.com/user-attachments/assets/e2933f31-95b9-4a4e-b07e-3d15acb479a0" />
+
+
